@@ -200,6 +200,7 @@
 import Pagination from "./Pagination.vue";
 import VDialog from "./vDialog.vue";
 import { formatDate } from "../../utils";
+/* eslint no-console: 0 */
 
 export default {
   components: { Pagination, VDialog },
