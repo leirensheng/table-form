@@ -49,7 +49,7 @@ axios.interceptors.response.use(
     return new Promise((resolve, reject) => {
       if (response.headers["content-disposition"]) {
         resolve(res);
-      } else if (res.code == 4) {
+      } else if (res.code == "4") {
         Message({
           message: res.msg || "error",
           type: "error",
@@ -60,7 +60,7 @@ axios.interceptors.response.use(
         //   router.push("/login");
         // });
         reject(new Error("未登录"));
-      } else if (res.code !== 1) {
+      } else if (res.code !== "1") {
         Message({
           message: res.msg || "error",
           type: "error",
