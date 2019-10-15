@@ -11,6 +11,7 @@
       @queryChange="queryChange"
       @beforeQuery="beforeQuery"
       @delete="handleDelete"
+      @beforeAssignToDialog="changeMode"
       @beforeDialogOpen="beforeDialogOpen"
     >
       <div slot="file">
@@ -44,6 +45,9 @@ export default {
     VTable
   },
   methods: {
+    changeMode(mode) {
+      this.mode = mode;
+    },
     queryChange(id, val, queryParams) {
       if (id === "code") {
         queryParams.version = "";
@@ -58,7 +62,7 @@ export default {
     handleDelete({ code }) {
       this.$confirm("确定删除？").then(() => {
         this.$axios
-          .delete(`/v1/scripts/${code}`)
+          .delete(`/v1/scripts/code/${code}`)
           .then(({ success, message }) => {
             if (success) {
               this.$refs.table.search();
@@ -95,10 +99,13 @@ export default {
     },
 
     getVersion(code) {
-      this.$axios(`/v1/scripts/${code}/versions`)
+      this.$axios(`/v1/scripts/code/${code}/versions`)
         .then(({ payload, success }) => {
           if (success) {
-            this.versions = payload.map(one => ({ name: one, id: one }));
+            this.versions = (payload || []).map(one => ({
+              name: one,
+              id: one
+            }));
             this.versionDisabled = false;
           }
         })
@@ -123,7 +130,7 @@ export default {
       });
       let action =
         mode == "edit"
-          ? this.$axios.put(`/v1/scripts/${this.formData.code}`, params)
+          ? this.$axios.put(`/v1/scripts/code/${this.formData.code}`, params)
           : this.$axios.post("/v1/scripts", params);
       action
         .then(res => {
@@ -142,14 +149,14 @@ export default {
     },
 
     list({ version, code }) {
-      return this.$axios(`/v1/scripts/${code}/version/${version}`);
+      return this.$axios(`/v1/scripts/code/${code}/versions/${version}`);
     },
 
     getLatest({ code }) {
-      return this.$axios(`/v1/scripts/${code}/lastest`);
+      return this.$axios(`/v1/scripts/code/${code}/lastest`);
     },
 
-    handleUpload(formData) {
+    handleUpload(formData, mode) {
       this.formData = formData;
       if (
         this.$refs.upload.uploadFiles.length &&
@@ -162,6 +169,10 @@ export default {
 
       return new Promise((resolve, reject) => {
         this.$on("uploadDone", res => {
+          if (mode == "add") {
+            this.$refs.table.queryParams.code = formData.code;
+            this.getVersion(formData.code);
+          }
           resolve(res);
         });
         this.$on("uploadFail", e => {
@@ -178,12 +189,13 @@ export default {
       versionDisabled: true,
       versions: [],
       formData: {},
+      mode: "add",
       tableBtnsConfig: [
         {
           name: "编辑",
           editConfig: {
             title: "修改",
-            handler: this.handleUpload
+            handler: formData => this.handleUpload(formData, "edit")
           }
         },
         {
@@ -200,7 +212,7 @@ export default {
           btnType: { isPlain: true, type: "primary" },
           addConfig: {
             title: "添加",
-            handler: this.handleUpload
+            handler: formData => this.handleUpload(formData, "add")
           }
         }
       ]
@@ -234,66 +246,76 @@ export default {
           support: ["add", "edit"]
         },
         {
-          name: "scriptAddDTO",
+          name: this.mode == "add" ? "scriptAddDTO" : "scriptEditDTO",
           queryType: "title",
           support: ["add", "edit"]
         },
         {
-          name: "code",
+          name: "脚本发布类型",
+          id: "releaseType",
+          isShow: false,
+          support: ["edit"]
+        },
+        {
+          name: "脚本code",
           id: "code",
           support: ["add", "query"]
         },
         {
-          name: "content",
+          name: "文件名",
+          id: "fileName"
+        },
+        {
+          name: "脚本内容",
           id: "content",
+          queryType: "textarea",
           support: ["add", "edit"]
         },
         {
-          name: "description",
+          name: "脚本描述",
           id: "description",
           support: ["add", "edit"]
         },
         {
-          name: "entryPoint",
+          name: "脚本入口",
           id: "entryPoint",
 
           support: ["add", "edit"]
         },
         {
-          name: "name",
+          name: "脚本名称",
           id: "name",
           support: ["add", "edit"]
         },
         {
-          name: "params",
+          name: "脚本变量",
           id: "params",
           support: ["add", "edit"]
         },
         {
-          name: "paramsType",
+          name: "脚本变量类型",
           id: "paramsType",
           support: ["add", "edit"]
         },
         {
-          name: "releaseNote",
+          name: "脚本发版描述",
           id: "releaseNote",
           support: ["add", "edit"]
         },
         {
-          name: "type",
+          name: "脚本类型",
           id: "type",
           support: ["add"]
         },
         {
-          name: "version",
+          name: "版本号",
           id: "version",
           queryType: "select",
           options: this.versions,
           support: {
             query: {
               disabled: this.versionDisabled
-            },
-            edit: {}
+            }
           }
         }
       ];

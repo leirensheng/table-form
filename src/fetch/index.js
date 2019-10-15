@@ -1,3 +1,4 @@
+/* eslint no-console: 0 */
 import Axios from "axios";
 import { Message } from "element-ui";
 // import store from "@/store";
@@ -5,9 +6,7 @@ import { Message } from "element-ui";
 // create an axios instance
 const axios = Axios.create({
   baseURL:
-    process.env.NODE_ENV === "development"
-      ? "http://39.100.141.76:3000/mock/670"
-      : "", // url = base url + request url
+    process.env.NODE_ENV === "development" ? "http://39.100.141.76:3000/mock/670" : "", // url = base url + request url
   withCredentials: true, // send cookies when cross-domain requests
   timeout: 5000 // request timeout
 });
@@ -84,3 +83,4 @@ axios.interceptors.response.use(
 );
 
 export default axios;
+/* eslint no-use-before-define: 2 */  // --> ON

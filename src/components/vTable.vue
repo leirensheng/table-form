@@ -135,6 +135,15 @@
                 </div>
               </div>
               <!-- 一个td只显示一个字段 -->
+              <el-popover
+                v-else-if="one.queryType=='textarea'"
+                placement="top-start"
+                width="200"
+                trigger="hover"
+                :content="scope.row[one.id]"
+              >
+                <span slot="reference">{{scope.row[one.id].slice(0,16)}}</span>
+              </el-popover>
               <div
                 v-else
                 style="line-height:19px"
@@ -438,16 +447,20 @@ export default {
         this.dataForDialog.index = index;
         this.dataForDialog.form = rowData;
       }
-      this.dataForDialog.mode = mode;
-      this.dataForDialog.items = this.columns.filter(
-        one =>
-          one.support &&
-          ((Array.isArray(one.support) && one.support.includes(mode)) ||
-            one.support[mode])
-      );
-      this.dataForDialog.title = title;
-      this.$emit("beforeDialogOpen", this.dataForDialog, mode);
-      this.dataForDialog.show = true;
+      this.$emit("beforeAssignToDialog", mode);
+
+      this.$nextTick(() => {
+        this.dataForDialog.mode = mode;
+        this.dataForDialog.items = this.columns.filter(
+          one =>
+            one.support &&
+            ((Array.isArray(one.support) && one.support.includes(mode)) ||
+              one.support[mode])
+        );
+        this.dataForDialog.title = title;
+        this.$emit("beforeDialogOpen", this.dataForDialog, mode);
+        this.dataForDialog.show = true;
+      });
     },
 
     // dialog编辑
@@ -528,8 +541,8 @@ export default {
               this.$message.error(message);
               return;
             }
-            let records = payload;
-            if (!Array.isArray(payload)) {
+            let records = payload || [];
+            if (payload && !Array.isArray(payload)) {
               records = [payload];
             }
             this.$emit("beforeAssignToTable", records);
@@ -576,6 +589,7 @@ export default {
     }
   }
 };
+/* eslint no-use-before-define: 2 */ // --> ON
 </script>
 <style lang="scss" scoped>
 * {
