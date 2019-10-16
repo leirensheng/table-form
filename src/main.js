@@ -14,7 +14,8 @@ import {
   Option,
   Upload,
   Message,
-  Popover
+  Popover,
+  MessageBox
 } from "element-ui";
 // import Element from "element-ui";
 // import "element-ui/lib/theme-chalk/index.css";
@@ -35,9 +36,11 @@ Vue.use(Option);
 Vue.use(Upload);
 Vue.use(FormItem);
 Vue.use(Popover);
+// Vue.use(MessageBox)
 
 Vue.use(Loading.directive);
 Vue.prototype.$message = Message;
+Vue.prototype.$confirm = MessageBox.confirm;
 
 Vue.config.productionTip = false;
 Vue.prototype.$axios = fetch;
