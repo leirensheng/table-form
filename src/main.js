@@ -13,7 +13,8 @@ import {
   Form,
   Option,
   Upload,
-  Message
+  Message,
+  Popover
 } from "element-ui";
 // import Element from "element-ui";
 // import "element-ui/lib/theme-chalk/index.css";
@@ -33,6 +34,7 @@ Vue.use(Dialog);
 Vue.use(Option);
 Vue.use(Upload);
 Vue.use(FormItem);
+Vue.use(Popover);
 
 Vue.use(Loading.directive);
 Vue.prototype.$message = Message;
