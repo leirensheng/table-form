@@ -1,5 +1,6 @@
 import Vue from "vue";
 import App from "./App.vue";
+import router from './router'
 import {
   Button,
   Select,
@@ -15,13 +16,19 @@ import {
   Upload,
   Message,
   Popover,
-  MessageBox
+  MessageBox,
+  Radio,
+  RadioGroup,
+  Alert
 } from "element-ui";
 // import Element from "element-ui";
 // import "element-ui/lib/theme-chalk/index.css";
+import VTable from '@/components/vTable.vue'
+Vue.component('VTable',VTable)
+import VDialog from '@/components/vDialog.vue'
+Vue.component('VDialog',VDialog)
 import fetch from "@/fetch";
 
-// Vue.use(Element);
 Vue.use(Select);
 Vue.use(Table);
 Vue.use(Button);
@@ -36,6 +43,9 @@ Vue.use(Option);
 Vue.use(Upload);
 Vue.use(FormItem);
 Vue.use(Popover);
+Vue.use(Radio);
+Vue.use(RadioGroup);
+Vue.use(Alert)
 // Vue.use(MessageBox)
 
 Vue.use(Loading.directive);
@@ -45,5 +55,6 @@ Vue.prototype.$confirm = MessageBox.confirm;
 Vue.config.productionTip = false;
 Vue.prototype.$axios = fetch;
 new Vue({
+  router,
   render: h => h(App)
 }).$mount("#app");

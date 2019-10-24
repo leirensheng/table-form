@@ -1,22 +1,22 @@
 <template>
   <div>
     <el-dialog
-      v-loading="inputs.loading"
       :title="inputs.title"
       :visible="inputs.show"
       :close-on-click-modal="false"
       :before-close="()=>inputs.show=false"
-      :width="inputs.dailogWidth"
+      :width="dailogWidth"
       center
       @close="close"
       @open="open"
     >
       <el-form
+        v-loading="loading"
         ref="form"
         :model="form"
-        :size="inputs.formSize"
+        :size="formSize"
         :validate-on-rule-change="false"
-        :label-width="inputs.labelWidth+'px'"
+        :label-width="labelWidth+'px'"
         :rules="formRules"
       >
         <div
@@ -118,10 +118,11 @@
           />
           <slot
             v-else
+            :form="form"
             :name="one.slotName"
           />
         </div>
-        <el-form-item>
+        <el-form-item v-if="showBtns">
           <div style="float:right">
             <el-button
               size="medium"
@@ -150,21 +151,69 @@ export default {
     inputs: {
       type: Object,
       required: true
+    },
+    showBtns: {
+      type: Boolean,
+      default: () => true
+    },
+    // 表单字段名宽度，单位为px
+    labelWidth: {
+      type: Number,
+      default: () => 90
+    },
+
+    dailogWidth: {
+      type: String,
+      default: () => "33%"
+    },
+    formSize: {
+      type: String,
+      default: () => "large"
+    },
+    // 修改的时候不传给后端的字段
+    notSendColumns: {
+      type: Array,
+      default: () => [
+        "updateUser",
+        "updateTime",
+        "password",
+        "updatePassword",
+        "createTime"
+      ]
+    },
+    basicAddForm: {
+      type: Object,
+      default: () => {}
+    },
+    basicEditForm: {
+      type: Object,
+      default: () => {}
+    },
+    // 处理v-table 打开本弹窗时表单数据（异步的，同步的可以直接在vTable中的beforeAssignToDialog中处理）
+    onDialogOpen: {
+      type: Function,
+      default: null
     }
   },
   data() {
     return {
       formRules: {},
-      form: {}
+      form: {},
+      loading: false
     };
   },
   computed: {
     showItems() {
-      return this.inputs.items.filter(one =>
-        Array.isArray(one.support)
-          ? true
-          : [undefined, true].includes(one.support[this.inputs.mode].show)
-      );
+      return this.inputs.items.filter(one => {
+        if (Array.isArray(one.support)) {
+          return true;
+        } else if (typeof one.support === "object") {
+          let isShow = one.support[this.inputs.mode].show;
+          return typeof isShow === "function"
+            ? isShow(this.form)
+            : [undefined, true].includes(isShow);
+        }
+      });
     }
   },
 
@@ -206,7 +255,6 @@ export default {
         config.support[this.inputs.mode] &&
         config.support[this.inputs.mode].eventName
       ) {
-        console.log("emit", config.support[this.inputs.mode].eventName);
         this.$emit(config.support[this.inputs.mode].eventName, {
           value: this.form[config.id],
           id: config.id,
@@ -218,28 +266,46 @@ export default {
     },
     open() {
       this.initRule();
-
       if (this.inputs.mode === "edit") {
-        this.form = JSON.parse(JSON.stringify(this.inputs.form));
-
-        this.inputs.notSendColumns.forEach(one => {
-          if (!this.showItems.map(column => column.id).includes(one)) {
-            delete this.form[one];
-          }
-        });
-
-        if (this.inputs.basicEditForm) {
-          this.form = { ...this.form, ...this.inputs.basicEditForm };
+        let data =
+          this.inputs.form && JSON.parse(JSON.stringify(this.inputs.form));
+        if (this.onDialogOpen) {
+          this.loading = true;
+          this.onDialogOpen(data)
+            .then(data => {
+              this.initEditForm(data);
+            })
+            .finally(() => {
+              this.loading = false;
+            });
+        } else {
+          this.initEditForm(data);
         }
       } else {
         this.inputs.items.forEach(one => {
           if (one.id) {
-            this.$set(this.form, one.id, "");
+            this.$set(
+              this.form,
+              one.id,
+              (one.support.add && one.support.add.defaultValue) || ""
+            );
           }
         });
-        if (this.inputs.basicAddForm) {
-          this.form = { ...this.form, ...this.inputs.basicAddForm };
+        if (this.basicAddForm) {
+          this.form = { ...this.form, ...this.basicAddForm };
         }
+      }
+    },
+    initEditForm(form) {
+      this.form = form;
+      this.notSendColumns.forEach(one => {
+        if (!this.showItems.map(column => column.id).includes(one)) {
+          delete this.form[one];
+        }
+      });
+
+      if (this.basicEditForm) {
+        this.form = { ...this.form, ...this.basicEditForm };
       }
     },
     // 初始化表单规则

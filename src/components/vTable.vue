@@ -41,6 +41,7 @@
             v-else
             v-model="queryParams[column.id]"
             size="large"
+            :disabled="column.support.query&&column.support.query.disabled"
             :placeholder="(column.support.query?
               column.support.query.placeholder:column.placeholder)||'请输入内容'"
             @change="(val)=>{handleQueryChange(val, column.id)}"
@@ -103,7 +104,7 @@
         <el-table
           v-if="currentCount==initCount "
           v-loading="loading"
-          :data="tableDataHandled"
+          :data="directTableData.length? directTableData: tableDataHandled"
           border
           size="medium"
           @selection-change="handleSelectionChange"
@@ -189,6 +190,7 @@
       </div>
       <v-dialog
         ref="vDialog"
+        v-bind="$attrs"
         :inputs="dataForDialog"
         @dialogClose="dialogClose"
         @edit="saveDialogEdit"
@@ -198,8 +200,12 @@
           v-for="(one,index) in slotItems"
           :key="index"
           :slot="one.slotName"
+          slot-scope="{form}"
         >
-          <slot :name="one.slotName" />
+          <slot
+            :name="one.slotName"
+            :form="form"
+          />
         </div>
       </v-dialog>
     </div>
@@ -214,10 +220,9 @@ import { formatDate } from "../../utils";
 export default {
   components: { Pagination, VDialog },
   props: {
-    // 表单字段名宽度，单位为px
-    labelWidth: {
-      type: Number,
-      default: () => 90
+    responseTableField: {
+      type: String,
+      default: () => ""
     },
     columns: {
       type: Array,
@@ -248,18 +253,9 @@ export default {
       default: () => {}
     },
 
-    basicAddForm: {
-      type: Object,
-      default: () => {}
-    },
-    basicEditForm: {
-      type: Object,
-      default: () => {}
-    },
-
     getData: {
       type: Function,
-      required: true
+      required: false
     },
 
     noShowPagination: {
@@ -276,24 +272,10 @@ export default {
       defalut: () => false,
       type: Boolean
     },
-    // 修改的时候不传给后端的字段
-    notSendColumns: {
+
+    directTableData: {
       type: Array,
-      default: () => [
-        "updateUser",
-        "updateTime",
-        "password",
-        "updatePassword",
-        "createTime"
-      ]
-    },
-    dailogWidth: {
-      type: String,
-      default: () => "33%"
-    },
-    formSize: {
-      type: String,
-      default: () => "large"
+      default: () => []
     }
   },
   data() {
@@ -304,14 +286,7 @@ export default {
         form: "", // 表单
         index: "", // 当前编辑行在表格的索引
         items: [], // 字段
-        loading: false,
-        confirmBtnLoading: false,
-        formSize: this.formSize,
-        dailogWidth: this.dailogWidth,
-        labelWidth: this.labelWidth,
-        basicAddForm: this.basicAddForm,
-        basicEditForm: this.basicEditForm,
-        notSendColumns: this.notSendColumns
+        confirmBtnLoading: false
       },
       total: 0,
       pageSize: 20,
@@ -536,14 +511,19 @@ export default {
           .then(res => {
             this.loading = false;
             // 对于不同的项目，需要更改下这里做适配
-            const { payload, success, message, total } = res;
+            let { payload, success, message, total } = res;
             if (!success) {
-              this.$message.error(message);
+              this.$message.error(message || "出错了");
               return;
             }
             let records = payload || [];
-            if (payload && !Array.isArray(payload)) {
+            if (payload && payload[this.responseTableField]) {
+              records = payload[this.responseTableField];
+            } else if (payload && !Array.isArray(payload)) {
               records = [payload];
+            }
+            if (total in payload) {
+              total = payload.total;
             }
             this.$emit("beforeAssignToTable", records);
             this.tableDataHandled = records;
