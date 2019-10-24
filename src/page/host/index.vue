@@ -2,7 +2,6 @@
   <div id="host">
     <v-table
       responseTableField='rows'
-      ref="table"
       noShowPagination
       :table-btns-config="tableBtnsConfig"
       :top-btns-config="topBtnsConfig"
@@ -10,9 +9,11 @@
       :label-width="130"
       :get-data="getDataList"
       :onDialogOpen="onDialogOpen"
+      :show-btns="false"
       @delete="handleDelete"
       @openExecuteDialog="openExecuteDialog"
       @addSecret="openSecretDialog"
+      @execAnsible="openExecAnsibleDialog"
     >
       <div
         slot="accounts"
@@ -39,7 +40,6 @@
     </v-table>
 
     <v-dialog
-      ref="vDialog"
       :show-btns="isShowDialogBtns"
       :inputs="secrectDialog"
       @add="handleAddSecret"
@@ -57,7 +57,6 @@
     </v-dialog>
 
     <v-dialog
-      ref="executeDialog"
       :labelWidth="100"
       :inputs="executeDialog"
       :show-btns="isShowDialogBtns"
@@ -74,6 +73,42 @@
         ></exec-lines>
       </div>
     </v-dialog>
+
+    <v-dialog
+      :labelWidth="100"
+      :inputs="execAnsibleDialog"
+      :show-btns="isShowDialogBtns"
+      @add="executeAnsible"
+      @dialogClose="closeExecuteAnsibleDialog"
+    >
+      <div
+        slot="inventoryTxt"
+        v-if="execAnsibleDialog.show"
+      >
+       <span>inventoryTxt：</span>
+        <input
+          ref="txtFile"
+          type="file"
+        >
+      </div>
+      <div
+        v-if="execAnsibleDialog.show"
+        slot="playbookZip"
+        style="margin-top:16px"
+      >
+       <span>playbookZip：</span>
+
+        <input
+          ref="zipFile"
+          type="file"
+        >
+        <exec-lines
+          v-if="execAnsibleResult"
+          slot="lines"
+          :executeResult="execAnsibleResult"
+        ></exec-lines>
+      </div>
+    </v-dialog>
   </div>
 </template>
 
@@ -85,6 +120,35 @@ export default {
     ExecLines
   },
   methods: {
+    openExecAnsibleDialog() {
+      this.execAnsibleDialog.show = true;
+    },
+    closeExecuteAnsibleDialog() {
+      this.execAnsibleResult = "";
+      this.isShowDialogBtns = true;
+    },
+    executeAnsible(form) {
+      let params = new FormData();
+      params.append("inventoryTxt", this.$refs.txtFile.files[0]);
+      params.append("playbookZip", this.$refs.zipFile.files[0]);
+      Object.keys(form).forEach(key => {
+        params.append(key, form[key]);
+      });
+      this.$axios
+        .post("/v1/hosts/exec/playbook", params)
+        .then(res => {
+          let { lines } = res;
+          this.isShowDialogBtns = false;
+          this.execAnsibleResult = lines.join("\n");
+        })
+        .finally(() => {
+          this.execAnsibleDialog.confirmBtnLoading = false;
+        });
+      // console.log(s);
+    },
+    handleZipChange(f) {
+      console.log(f);
+    },
     getAccoutData(val) {
       return Promise.resolve({
         payload: val
@@ -196,6 +260,37 @@ export default {
   },
   data() {
     return {
+      execAnsibleResult: "",
+      execAnsibleDialog: {
+        title: "执行Ansible剧本",
+        show: false,
+        mode: "add", // 编辑或者新增，
+        form: {}, // 表单
+        items: [
+          {
+            name: "参数",
+            queryType: "textarea",
+            id: "args",
+            support: ["add"]
+          },
+          {
+            queryType: "slot",
+            slotName: "inventoryTxt",
+            support: ["add"]
+          },
+          {
+            queryType: "slot",
+            slotName: "playbookZip",
+            support: ["add"]
+          },
+          {
+            queryType: "slot",
+            slotName: "lines",
+            support: ["add"]
+          }
+        ], // 字段
+        confirmBtnLoading: false
+      },
       networksColumns: [
         { name: "connectionExt", id: "connectionExt" },
         { name: "连接方式", id: "connectionType" },
@@ -329,8 +424,13 @@ export default {
         },
         {
           name: "添加秘钥",
-          btnType: { isPlain: false, type: "primary" },
+          btnType: { isPlain: false, type: "warning" },
           eventName: "addSecret"
+        },
+        {
+          name: "执行Ansible剧本",
+          btnType: { isPlain: true, type: "success" },
+          eventName: "execAnsible"
         }
       ]
     };
