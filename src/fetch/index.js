@@ -8,7 +8,7 @@ const axios = Axios.create({
   baseURL:
     process.env.NODE_ENV === "development" ? "http://39.100.141.76:3000/mock/670" : "", // url = base url + request url
   withCredentials: true, // send cookies when cross-domain requests
-  timeout: 5000 // request timeout
+  timeout: 10000 // request timeout
 });
 
 // request interceptor

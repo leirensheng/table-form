@@ -1,7 +1,6 @@
 <template>
   <div id="record">
     <v-table
-      ref="table"
       noShowPagination
       responseTableField='rows'
       :table-btns-config="tableBtnsConfig"
@@ -17,12 +16,7 @@
         slot="hosts"
         style="margin-top:-16px;"
       >
-        <v-table
-          :noShowSearchBtn="true"
-          :columns="hostsColumns"
-          :directTableData="hostsTableData"
-          noShowPagination
-        ></v-table>
+        <hosts-table :data="hostsTableData"></hosts-table>
       </div>
     </v-table>
   </div>
@@ -30,118 +24,19 @@
 
 <script>
 import ExecLines from "@/components/lines.vue";
+import HostsTable from "@/page/host/components/hostsTable.vue";
+import columns from "./columns.js";
 export default {
   name: "record",
   components: {
-    ExecLines
+    ExecLines,
+    HostsTable
   },
   data() {
     return {
       hostsTableData: [],
       executeResult: "",
-      hostsColumns: [
-        {
-          name: "组",
-          id: "group"
-        },
-        {
-          name: "主机id",
-          id: "hostId"
-        }
-      ],
-      columns: [
-        {
-          name: "name",
-          id: "name"
-        },
-        {
-          name: "execId",
-          id: "id",
-          isShow: false
-        },
-        {
-          name: "命令",
-          id: "cmd",
-          support: {
-            edit: {
-              type: "text"
-            }
-          }
-        },
-        {
-          name: "类型",
-          id: "type"
-        },
-        {
-          name: "是否成功",
-          id: "success",
-          support: {
-            edit: {
-              type: "text"
-            }
-          }
-        },
-        {
-          name: "groupname",
-          id: "groupname"
-        },
-        {
-          name: "hostId",
-          id: "hostId"
-        },
-        {
-          name: "exitStatus",
-          id: "exitStatus",
-          support: {
-            edit: {
-              type: "text"
-            }
-          }
-        },
-        {
-          name: "errMsg",
-          id: "errMsg",
-          support: {
-            edit: {
-              type: "text"
-            }
-          }
-        },
-        {
-          name: "执行记录",
-          queryType: "title",
-          support: {
-            edit: {}
-          }
-        },
-        {
-          name: "执行记录",
-          queryType: "slot",
-          slotName: "execLines",
-          support: {
-            edit: {}
-          }
-        },
-        {
-          name: "主机信息",
-          queryType: "title",
-          support: {
-            edit: {
-              show: row => row.type !== "ssh"
-            }
-          }
-        },
-        {
-          name: "主机信息",
-          queryType: "slot",
-          slotName: "hosts",
-          support: {
-            edit: {
-              show: row => row.type !== "ssh"
-            }
-          }
-        }
-      ],
+      columns,
       tableBtnsConfig: [
         {
           name: "执行记录",
@@ -157,7 +52,7 @@ export default {
   methods: {
     onDialogOpen({ id, hostId, type }) {
       this.executeResult = "";
-      this.hosts = "";
+      this.hostsTableData = [];
       let path =
         type === "ssh"
           ? `/v1/hosts/${hostId}/exec/${id}`
@@ -166,18 +61,15 @@ export default {
       return this.$axios.get(path).then(res => {
         let { payload } = res;
         let { lines, hosts } = payload;
-        this.executeResult = lines.join("\n");
+        this.executeResult = lines;
         this.hostsTableData = hosts;
         return payload;
       });
     },
-
+  //  Todo:替换
     getList() {
       return this.$axios.get("v1/records");
     }
   }
 };
 </script>
-
-<style>
-</style>template

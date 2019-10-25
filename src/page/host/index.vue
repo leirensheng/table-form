@@ -38,24 +38,9 @@
         ></v-table>
       </div>
     </v-table>
-
-    <v-dialog
-      :show-btns="isShowDialogBtns"
-      :inputs="secrectDialog"
-      @add="handleAddSecret"
-      @dialogClose="closeSecretDialog"
-    >
-      <el-alert
-        v-show="publicKey"
-        style="margin-bottom:8px"
-        slot="result"
-        :title="publicKey"
-        type="success"
-        effect="dark"
-      >
-      </el-alert>
-    </v-dialog>
-
+    <!-- 生成秘钥 -->
+    <secrect-dialog ref="secrectDialog"/>
+    
     <v-dialog
       :labelWidth="100"
       :inputs="executeDialog"
@@ -85,7 +70,7 @@
         slot="inventoryTxt"
         v-if="execAnsibleDialog.show"
       >
-       <span>inventoryTxt：</span>
+        <span>inventoryTxt：</span>
         <input
           ref="txtFile"
           type="file"
@@ -96,17 +81,24 @@
         slot="playbookZip"
         style="margin-top:16px"
       >
-       <span>playbookZip：</span>
-
+        <span>playbookZip：</span>
         <input
           ref="zipFile"
           type="file"
         >
-        <exec-lines
-          v-if="execAnsibleResult"
-          slot="lines"
-          :executeResult="execAnsibleResult"
-        ></exec-lines>
+      </div>
+
+      <exec-lines
+        v-if="execAnsibleResult"
+        slot="lines"
+        :executeResult="execAnsibleResult"
+      ></exec-lines>
+      <div
+        v-if="execAnsibleResult"
+        slot="hosts"
+        style="margin-top:-16px;"
+      >
+        <hosts-table :data="hostsTableData"></hosts-table>
       </div>
     </v-dialog>
   </div>
@@ -114,10 +106,28 @@
 
 <script>
 import ExecLines from "@/components/lines.vue";
+import HostsTable from "@/page/host/components/hostsTable.vue";
+import SecrectDialog from './components/secrectDialog'
 export default {
   name: "host",
   components: {
-    ExecLines
+    ExecLines,
+    HostsTable,
+    SecrectDialog
+  },
+  sockets: {
+    connect: function() {
+      console.log("socket connected");
+    },
+    onmessage: function(data) {
+      console.log("socket connected", data);
+    },
+    messages: function(data) {
+      console.log(data);
+    }
+  },
+  mounted() {
+    this.$socket.emit("join", "wahh");
   },
   methods: {
     openExecAnsibleDialog() {
@@ -125,6 +135,7 @@ export default {
     },
     closeExecuteAnsibleDialog() {
       this.execAnsibleResult = "";
+      this.hostsTableData = [];
       this.isShowDialogBtns = true;
     },
     executeAnsible(form) {
@@ -134,17 +145,33 @@ export default {
       Object.keys(form).forEach(key => {
         params.append(key, form[key]);
       });
-      this.$axios
-        .post("/v1/hosts/exec/playbook", params)
-        .then(res => {
-          let { lines } = res;
-          this.isShowDialogBtns = false;
-          this.execAnsibleResult = lines.join("\n");
-        })
-        .finally(() => {
-          this.execAnsibleDialog.confirmBtnLoading = false;
-        });
-      // console.log(s);
+      if (form.excecuteType === "sync") {
+        this.$axios
+          .post("/v1/hosts/exec/playbook", params)
+          .then(res => {
+            let { lines, hosts } = res;
+            this.isShowDialogBtns = false;
+            this.hostsTableData = hosts;
+            this.execAnsibleResult = lines.join("\n");
+          })
+          .finally(() => {
+            this.execAnsibleDialog.confirmBtnLoading = false;
+          });
+      } else {
+        this.$axios
+          .post("/v1/hosts/exec/playbook/async", params)
+          .then(() => {
+            this.isShowDialogBtns = false;
+            this.$message.warning("异步执行中");
+            setTimeout(() => {
+              this.showAnsibleSynccResult();
+            }, 3000);
+            this.execAnsibleDialog.show = false;
+          })
+          .finally(() => {
+            this.execAnsibleDialog.confirmBtnLoading = false;
+          });
+      }
     },
     handleZipChange(f) {
       console.log(f);
@@ -155,7 +182,7 @@ export default {
       });
     },
     openSecretDialog() {
-      this.secrectDialog.show = true;
+      this.$refs.secrectDialog.data.show = true;
     },
     openExecuteDialog({ id }) {
       this.executeDialog.form.id = id;
@@ -189,6 +216,23 @@ export default {
           });
       }
     },
+    showAnsibleSynccResult() {
+      let res = {
+        cmd: "abcdefg",
+        hosts: [{ group: 23, hostId: 5 }],
+        lines: ["fdfsfaf", "tertnftg"]
+      };
+      let form = { ...res, lines: res.lines.join("\n"), excecuteType: "async" };
+      this.execAnsibleDialog = {
+        ...this.execAnsibleDialog,
+        form,
+        mode: "edit"
+      };
+      this.execAnsibleResult = form.lines;
+      this.hostsTableData = form.hosts;
+      this.isShowDialogBtns = false;
+      this.execAnsibleDialog.show = true;
+    },
     showAsyncResult() {
       let res = {
         cmd: "abcdefg",
@@ -200,17 +244,7 @@ export default {
       this.isShowDialogBtns = false;
       this.executeDialog.show = true;
     },
-    handleAddSecret(form) {
-      this.$axios
-        .post("/v1/secret-key/rsa", form)
-        .then(({ publicKey, id }) => {
-          this.publicKey = `生成的公钥：${publicKey}，id：${id}`;
-          this.isShowDialogBtns = false;
-        })
-        .finally(() => {
-          this.secrectDialog.confirmBtnLoading = false;
-        });
-    },
+
     getDataList() {
       return this.$axios.get("v1/hosts");
     },
@@ -218,10 +252,7 @@ export default {
       this.isShowDialogBtns = true;
       this.executeResult = "";
     },
-    closeSecretDialog() {
-      this.isShowDialogBtns = true;
-      this.publicKey = "";
-    },
+
     handleAdd(form) {
       if (form.connectionType === "SSH_TUNNELS") {
         form.sshTunnels = {
@@ -260,6 +291,7 @@ export default {
   },
   data() {
     return {
+      hostsTableData: [],
       execAnsibleResult: "",
       execAnsibleDialog: {
         title: "执行Ansible剧本",
@@ -271,7 +303,7 @@ export default {
             name: "参数",
             queryType: "textarea",
             id: "args",
-            support: ["add"]
+            support: ["add", "edit"]
           },
           {
             queryType: "slot",
@@ -284,9 +316,32 @@ export default {
             support: ["add"]
           },
           {
+            name: "执行方式",
+            id: "excecuteType",
+            options: [
+              { name: "同步", id: "sync" },
+              { name: "异步", id: "async" }
+            ],
+            support: {
+              add: {
+                type: "radio",
+                defaultValue: "sync"
+              },
+              edit: {
+                type: "radio",
+                defaultValue: "sync"
+              }
+            }
+          },
+          {
             queryType: "slot",
             slotName: "lines",
-            support: ["add"]
+            support: ["add", "edit"]
+          },
+          {
+            queryType: "slot",
+            slotName: "hosts",
+            support: ["add", "edit"]
           }
         ], // 字段
         confirmBtnLoading: false
@@ -363,34 +418,6 @@ export default {
         confirmBtnLoading: false
       },
       isShowDialogBtns: "",
-      publicKey: "",
-      secrectDialog: {
-        title: "生成RSA密钥",
-        show: false,
-        mode: "add", // 编辑或者新增，
-        form: {}, // 表单
-        items: [
-          {
-            name: "描述",
-            id: "comment",
-            required: true,
-            support: ["add"]
-          },
-          {
-            name: "口令",
-            id: "passphrase",
-            required: true,
-            support: ["add"]
-          },
-          {
-            name: "结果",
-            support: ["add"],
-            queryType: "slot",
-            slotName: "result"
-          }
-        ], // 字段
-        confirmBtnLoading: false
-      },
       formData: {},
       mode: "add",
       tableBtnsConfig: [

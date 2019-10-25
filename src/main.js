@@ -28,6 +28,12 @@ Vue.component('VTable',VTable)
 import VDialog from '@/components/vDialog.vue'
 Vue.component('VDialog',VDialog)
 import fetch from "@/fetch";
+import VueSocketIo from 'vue-socket.io';
+
+Vue.use(new VueSocketIo({
+    debug: true,
+    connection: 'http://metinseylan.com:1992' //地址+端口，由后端提供
+}));
 
 Vue.use(Select);
 Vue.use(Table);
