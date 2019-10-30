@@ -9,7 +9,8 @@
       :label-width="130"
       :get-data="getDataList"
       :onDialogOpen="onDialogOpen"
-      :show-btns="false"
+      :show-btns="isShowBtns"
+      @dialogClose="handleDialogClose"
       @delete="handleDelete"
       @openExecuteDialog="openExecuteDialog"
       @addSecret="openSecretDialog"
@@ -41,10 +42,10 @@
     <!-- 生成秘钥 -->
     <secrect-dialog ref="secrectDialog" />
     <!-- 执行 -->
-    <ExecAnsibleDialog ref="execAnsibleDialog"/>
- 
-    <execute-dialog ref="executeDialog"/>
-    
+    <ExecAnsibleDialog ref="execAnsibleDialog" />
+
+    <execute-dialog ref="executeDialog" />
+
   </div>
 </template>
 
@@ -77,7 +78,9 @@ export default {
     openExecAnsibleDialog() {
       this.$refs.execAnsibleDialog.data.show = true;
     },
-
+    handleDialogClose() {
+      this.isShowBtns = true;
+    },
     handleZipChange(f) {
       console.log(f);
     },
@@ -121,6 +124,7 @@ export default {
     },
 
     onDialogOpen({ id }) {
+      this.isShowBtns = false;
       this.accountsData = [];
       this.networksData = [];
       return this.$axios.get(`/v1/hosts/${id}`).then(res => {
@@ -134,6 +138,7 @@ export default {
   },
   data() {
     return {
+      isShowBtns: true,
       networksColumns: [
         { name: "connectionExt", id: "connectionExt" },
         { name: "连接方式", id: "connectionType" },
