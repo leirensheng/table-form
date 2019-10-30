@@ -19,7 +19,9 @@ import {
   MessageBox,
   Radio,
   RadioGroup,
-  Alert
+  Alert,
+  Tabs,
+  TabPane
 } from "element-ui";
 // import Element from "element-ui";
 // import "element-ui/lib/theme-chalk/index.css";
@@ -35,6 +37,8 @@ Vue.use(new VueSocketIo({
     connection: 'http://metinseylan.com:1992' //地址+端口，由后端提供
 }));
 
+Vue.use(Tabs)
+Vue.use(TabPane)
 Vue.use(Select);
 Vue.use(Table);
 Vue.use(Button);

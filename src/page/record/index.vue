@@ -1,75 +1,28 @@
 <template>
-  <div id="record">
-    <v-table
-      noShowPagination
-      responseTableField='rows'
-      :table-btns-config="tableBtnsConfig"
-      :columns="columns"
-      :get-data="getList"
-      :onDialogOpen="onDialogOpen"
-      :show-btns="false"
-    >
-      <div slot="execLines">
-        <exec-lines :executeResult="executeResult"></exec-lines>
-      </div>
-      <div
-        slot="hosts"
-        style="margin-top:-16px;"
-      >
-        <hosts-table :data="hostsTableData"></hosts-table>
-      </div>
-    </v-table>
-  </div>
+  <el-tabs v-model="activeName" @tab-click="handleClick">
+    <el-tab-pane label="ansible" name="first">
+       <basic-table type="ansible"></basic-table>
+    </el-tab-pane>
+    <el-tab-pane label="ssh" name="second">
+       <basic-table type="ssh"></basic-table>
+    </el-tab-pane>
+  </el-tabs>
 </template>
-
 <script>
-import ExecLines from "@/components/lines.vue";
-import HostsTable from "@/page/host/components/hostsTable.vue";
-import columns from "./columns.js";
-export default {
-  name: "record",
-  components: {
-    ExecLines,
-    HostsTable
-  },
-  data() {
-    return {
-      hostsTableData: [],
-      executeResult: "",
-      columns,
-      tableBtnsConfig: [
-        {
-          name: "执行记录",
-          show: row => row.type !== "ansible",
-          editConfig: {
-            title: "执行记录"
-          }
-        }
-      ]
-    };
-  },
-
-  methods: {
-    onDialogOpen({ id, hostId, type }) {
-      this.executeResult = "";
-      this.hostsTableData = [];
-      let path =
-        type === "ssh"
-          ? `/v1/hosts/${hostId}/exec/${id}`
-          : `/v1/hosts/exec/ansible/${id}`;
-
-      return this.$axios.get(path).then(res => {
-        let { payload } = res;
-        let { lines, hosts } = payload;
-        this.executeResult = lines;
-        this.hostsTableData = hosts;
-        return payload;
-      });
+ import BasicTable from './table'
+  export default {
+    data() {
+      return {
+        activeName: 'second'
+      };
     },
-  //  Todo:替换
-    getList() {
-      return this.$axios.get("v1/records");
+    components:{
+      BasicTable
+    },
+    methods: {
+      handleClick(tab, event) {
+        console.log(tab, event);
+      }
     }
-  }
-};
+  };
 </script>
