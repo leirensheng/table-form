@@ -41,36 +41,21 @@
     <!-- 生成秘钥 -->
     <secrect-dialog ref="secrectDialog" />
     <!-- 执行 -->
-    <ExecAnsibleDialog ref="execAnsibleDialog"></ExecAnsibleDialog>
-    <v-dialog
-      :labelWidth="100"
-      :inputs="executeDialog"
-      :show-btns="isShowDialogBtns"
-      @add="execute"
-      @dialogClose="closeExecuteDialog"
-    >
-      <div
-        slot="executeResult"
-        v-if="executeResult"
-      >
-        <exec-lines
-          :title="'执行结果'"
-          :executeResult="executeResult"
-        ></exec-lines>
-      </div>
-    </v-dialog>
-
+    <ExecAnsibleDialog ref="execAnsibleDialog"/>
+ 
+    <execute-dialog ref="executeDialog"/>
+    
   </div>
 </template>
 
 <script>
-import ExecLines from "@/components/lines.vue";
 import ExecAnsibleDialog from "./components/execAnsibleDialog";
+import ExecuteDialog from "./components/executeDialog";
 import SecrectDialog from "./components/secrectDialog";
 export default {
   name: "host",
   components: {
-    ExecLines,
+    ExecuteDialog,
     SecrectDialog,
     ExecAnsibleDialog
   },
@@ -105,58 +90,12 @@ export default {
       this.$refs.secrectDialog.data.show = true;
     },
     openExecuteDialog({ id }) {
-      this.executeDialog.form.id = id;
-      this.executeDialog.show = true;
+      this.$refs.executeDialog.data.form.id = id;
+      this.$refs.executeDialog.data.show = true;
     },
-    execute(form) {
-      let { excecuteType, cmd, id } = form;
-      if (excecuteType === "sync") {
-        this.$axios
-          .post(`/v1/hosts/${id}/exec`, { cmd })
-          .then(res => {
-            this.isShowDialogBtns = false;
-            this.executeResult = res.lines.join("\n");
-            // this.$resu
-          })
-          .finally(() => {
-            this.executeDialog.confirmBtnLoading = false;
-          });
-      } else {
-        this.$axios
-          .post(`/v1/hosts/${id}/exec/async`)
-          .then(() => {
-            this.executeDialog.show = false;
-            this.$message.info("异步执行中。。。");
-            setTimeout(() => {
-              this.showAsyncResult();
-            }, 3000);
-          })
-          .finally(() => {
-            this.executeDialog.confirmBtnLoading = false;
-          });
-      }
-    },
-
-    showAsyncResult() {
-      let res = {
-        cmd: "abcdefg",
-        lines: ["fdfsfaf", "tertnftg"]
-      };
-      let form = { ...res, lines: res.lines.join("\n"), excecuteType: "async" };
-      this.executeDialog = { ...this.executeDialog, form, mode: "edit" };
-      this.executeResult = form.lines;
-      this.isShowDialogBtns = false;
-      this.executeDialog.show = true;
-    },
-
     getDataList() {
       return this.$axios.get("v1/hosts");
     },
-    closeExecuteDialog() {
-      this.isShowDialogBtns = true;
-      this.executeResult = "";
-    },
-
     handleAdd(form) {
       if (form.connectionType === "SSH_TUNNELS") {
         form.sshTunnels = {
@@ -212,61 +151,6 @@ export default {
         { name: "publicKey", id: "publicKey" }
       ],
       accountsData: [],
-      executeResult: "",
-      executeDialog: {
-        title: "执行命令",
-        show: false,
-        mode: "add", // 编辑或者新增，
-        form: {}, // 表单
-        items: [
-          {
-            name: "命令",
-            id: "cmd",
-            required: true,
-            support: {
-              add: {
-                type: "textarea"
-              },
-              edit: {
-                type: "textarea"
-              }
-            }
-          },
-          {
-            name: "执行方式",
-            id: "excecuteType",
-            required: true,
-            support: {
-              add: {
-                type: "radio",
-                defaultValue: "sync"
-              },
-              edit: {
-                type: "radio"
-              }
-            },
-            options: [
-              {
-                name: "同步",
-                id: "sync"
-              },
-              {
-                name: "异步",
-                id: "async"
-              }
-            ]
-          },
-          {
-            name: "执行结果",
-            queryType: "slot",
-            support: ["add", "edit"],
-            slotName: "executeResult"
-          }
-        ], // 字段
-        loading: false,
-        confirmBtnLoading: false
-      },
-      isShowDialogBtns: "",
       formData: {},
       mode: "add",
       tableBtnsConfig: [
