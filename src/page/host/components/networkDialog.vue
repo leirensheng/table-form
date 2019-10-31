@@ -73,7 +73,15 @@ export default {
         { name: "mac地址", id: "macAddr" },
         { name: "primary", id: "primary" },
         { name: "remark", id: "remark", support: ["edit"] },
-        { name: "jumpHostId", id: "jumpHostId", support: ["edit"] }
+        {
+          name: "jumpHostId",
+          id: "jumpHostId",
+          support: {
+            edit: {
+              show: row => row.connectionType === "SSH_TUNNELS"
+            }
+          }
+        }
       ],
       tableBtnsConfig: [
         {
@@ -100,12 +108,12 @@ export default {
       let params = {
         connectionType: form.connectionType,
         sshTunnels: {
-          jumpHostId: "",
+          jumpHostId: form.connectionType==='SSH_TUNNELS'?form.jumpHostId:'',
           networkId: form.id
         },
         remark: form.remark
       };
-      return this.$axios.put(`/v1/hosts/${this.hostId}/networks`,params);
+      return this.$axios.put(`/v1/hosts/${this.hostId}/networks`, params);
     },
     refeshTableData() {
       return this.$axios.get(`/v1/hosts/${this.hostId}`).then(res => {

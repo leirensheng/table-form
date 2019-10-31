@@ -9,9 +9,7 @@
       :label-width="130"
       :get-data="getDataList"
       :onDialogOpen="onDialogOpen"
-      :show-btns="isShowBtns"
       :last-column-width="230"
-      @dialogClose="handleDialogClose"
       @delete="handleDelete"
       @openExecuteDialog="openExecuteDialog"
       @addSecret="openSecretDialog"
@@ -30,7 +28,7 @@
       :hostId="curHostId"
       ref="accountDialog"
     />
-     <!-- 网络信息 -->
+    <!-- 网络信息 -->
     <network-dialog
       :hostId="curHostId"
       ref="networkDialog"
@@ -69,11 +67,14 @@ export default {
     this.$socket.emit("join", "wahh");
   },
   methods: {
+    modifyHost(form) {
+      return this.$axios.put(`v1/hosts/${form.id}`, {
+        name: form.name,
+        remark: form.remark
+      });
+    },
     openExecAnsibleDialog() {
       this.$refs.execAnsibleDialog.data.show = true;
-    },
-    handleDialogClose() {
-      this.isShowBtns = true;
     },
     handleZipChange(f) {
       console.log(f);
@@ -127,22 +128,20 @@ export default {
     },
 
     onDialogOpen({ id }) {
-      this.isShowBtns = false;
       return this.$axios.get(`/v1/hosts/${id}`).then(res => res.payload);
     }
   },
   data() {
     return {
       curHostId: "",
-      isShowBtns: true,
       formData: {},
       mode: "add",
       tableBtnsConfig: [
         {
-          name: "详情",
+          name: "详情/修改",
           editConfig: {
-            title: "详情",
-            handler: formData => this.handleUpload(formData, "edit")
+            title: "详情/修改",
+            handler: this.modifyHost
           }
         },
         {
@@ -194,12 +193,7 @@ export default {
           name: "主机名称",
           id: "name",
           required: true,
-          support: {
-            add: {},
-            edit: {
-              type: "text"
-            }
-          }
+          support: ["add", "edit"]
         },
         {
           name: "主机id",
@@ -232,12 +226,7 @@ export default {
         {
           name: "备注",
           id: "remark",
-          support: {
-            add: {},
-            edit: {
-              type: "text"
-            }
-          }
+          support: ["add", "edit"]
         },
         {
           name: "网络标识",
