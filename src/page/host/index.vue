@@ -22,9 +22,10 @@
     <!-- 执行 -->
     <ExecAnsibleDialog ref="execAnsibleDialog" />
 
-    <execute-dialog 
-    :id="curHostId"
-    ref="executeDialog" />
+    <execute-dialog
+      :id="curHostId"
+      ref="executeDialog"
+    />
     <!-- 账户信息 -->
     <account-dialog
       :hostId="curHostId"
@@ -44,7 +45,7 @@ import ExecuteDialog from "./components/executeDialog";
 import SecrectDialog from "./components/secrectDialog";
 import AccountDialog from "./components/accountDialog";
 import NetworkDialog from "./components/networkDialog";
-
+import { formatDate } from "../../../utils";
 export default {
   name: "host",
   components: {
@@ -334,6 +335,7 @@ export default {
         {
           name: "创建时间",
           id: "createdAt",
+          formatter: val => formatDate("yyyy-MM-dd hh:mm:ss", new Date(val)),
           support: {
             edit: {
               type: "text"
@@ -352,6 +354,7 @@ export default {
         {
           name: "更新时间",
           id: "updatedAt",
+          formatter: val => formatDate("yyyy-MM-dd hh:mm:ss", new Date(val)),
           support: {
             edit: {
               type: "text"

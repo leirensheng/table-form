@@ -221,6 +221,10 @@ import { formatDate } from "../../utils";
 export default {
   components: { Pagination, VDialog },
   props: {
+    timeFields:{
+      type: Array,
+      default:()=>['createdAt','updateTime']
+    },
     lastColumnWidth: {
       type: Number,
       default: 100
@@ -564,7 +568,7 @@ export default {
     generateFormatter(column) {
       column.formatter = val => {
         // 统一格式化时间
-        if (column.id === "updateTime") {
+        if (this.timeFields.includes(column.id) ) {
           return formatDate(val);
         }
         const target = column.options.find(
