@@ -157,6 +157,7 @@
             v-if="tableBtnsConfig.length"
             label="操作"
             :align="'center'"
+            :width="lastColumnWidth"
             fixed="right"
           >
             <template slot-scope="scope">
@@ -220,6 +221,10 @@ import { formatDate } from "../../utils";
 export default {
   components: { Pagination, VDialog },
   props: {
+    lastColumnWidth: {
+      type: Number,
+      default: 100
+    },
     responseTableField: {
       type: String,
       default: () => ""
@@ -453,7 +458,11 @@ export default {
             ) {
               this.$set(this.tableDataHandled, this.dataForDialog.index, model);
             } else {
-              this.search();
+              if (this.getData) {
+                this.search();
+              } else {
+                this.$emit('refeshTableData')
+              }
             }
             this.dataForDialog.show = false;
             this.$message.success("保存成功");

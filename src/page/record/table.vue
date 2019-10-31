@@ -66,7 +66,7 @@ export default {
       let path =
         type === "ssh"
           ? `/v1/hosts/${hostId}/exec/${id}`
-          : `/v1/hosts/exec/ansible/${id}`;
+          : `/v1/hosts/${hostId}/exec/ansible/${id}`;
 
       return this.$axios.get(path).then(res => {
         let { payload } = res;

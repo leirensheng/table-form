@@ -10,42 +10,31 @@
       :get-data="getDataList"
       :onDialogOpen="onDialogOpen"
       :show-btns="isShowBtns"
+      :last-column-width="230"
       @dialogClose="handleDialogClose"
       @delete="handleDelete"
       @openExecuteDialog="openExecuteDialog"
       @addSecret="openSecretDialog"
       @execAnsible="openExecAnsibleDialog"
-    >
-      <div
-        slot="accounts"
-        style="margin-top:-20px; margin-bottom:12px"
-      >
-        <v-table
-          :noShowSearchBtn="true"
-          :columns="accountsColumns"
-          :directTableData="accountsData"
-          noShowPagination
-        ></v-table>
-      </div>
-      <div
-        slot="networks"
-        style="margin-top:-20px;"
-      >
-        <v-table
-          :noShowSearchBtn="true"
-          :columns="networksColumns"
-          :directTableData="networksData"
-          noShowPagination
-        ></v-table>
-      </div>
-    </v-table>
+      @openAccountDialog="openAccountDialog"
+      @openNetworkDialog="openNetworkDialog"
+    />
     <!-- 生成秘钥 -->
     <secrect-dialog ref="secrectDialog" />
     <!-- 执行 -->
     <ExecAnsibleDialog ref="execAnsibleDialog" />
 
     <execute-dialog ref="executeDialog" />
-
+    <!-- 账户信息 -->
+    <account-dialog
+      :hostId="curHostId"
+      ref="accountDialog"
+    />
+     <!-- 网络信息 -->
+    <network-dialog
+      :hostId="curHostId"
+      ref="networkDialog"
+    />
   </div>
 </template>
 
@@ -53,12 +42,17 @@
 import ExecAnsibleDialog from "./components/execAnsibleDialog";
 import ExecuteDialog from "./components/executeDialog";
 import SecrectDialog from "./components/secrectDialog";
+import AccountDialog from "./components/accountDialog";
+import NetworkDialog from "./components/networkDialog";
+
 export default {
   name: "host",
   components: {
     ExecuteDialog,
     SecrectDialog,
-    ExecAnsibleDialog
+    ExecAnsibleDialog,
+    AccountDialog,
+    NetworkDialog
   },
   sockets: {
     connect: function() {
@@ -96,6 +90,15 @@ export default {
       this.$refs.executeDialog.data.form.id = id;
       this.$refs.executeDialog.data.show = true;
     },
+    openAccountDialog({ id }) {
+      this.curHostId = id;
+      this.$refs.accountDialog.data.show = true;
+    },
+    openNetworkDialog({ id }) {
+      this.curHostId = id;
+      this.$refs.networkDialog.data.show = true;
+    },
+
     getDataList() {
       return this.$axios.get("v1/hosts");
     },
@@ -125,37 +128,13 @@ export default {
 
     onDialogOpen({ id }) {
       this.isShowBtns = false;
-      this.accountsData = [];
-      this.networksData = [];
-      return this.$axios.get(`/v1/hosts/${id}`).then(res => {
-        let { payload } = res;
-        let { networks, accounts } = payload;
-        this.accountsData = accounts;
-        this.networksData = networks;
-        return payload;
-      });
+      return this.$axios.get(`/v1/hosts/${id}`).then(res => res.payload);
     }
   },
   data() {
     return {
+      curHostId: "",
       isShowBtns: true,
-      networksColumns: [
-        { name: "connectionExt", id: "connectionExt" },
-        { name: "连接方式", id: "connectionType" },
-        { name: "主机id", id: "hostId" },
-        { name: "ip地址", id: "ipAddr" },
-        { name: "mac地址", id: "macAddr" },
-        { name: "primary", id: "primary" },
-        { name: "remark", id: "remark" }
-      ],
-      networksData: [],
-      accountsColumns: [
-        { name: "用户名", id: "username" },
-        { name: "登陆方式", id: "loginType" },
-        { name: "primary", id: "primary" },
-        { name: "publicKey", id: "publicKey" }
-      ],
-      accountsData: [],
       formData: {},
       mode: "add",
       tableBtnsConfig: [
@@ -165,6 +144,14 @@ export default {
             title: "详情",
             handler: formData => this.handleUpload(formData, "edit")
           }
+        },
+        {
+          name: "账户信息",
+          eventName: "openAccountDialog"
+        },
+        {
+          name: "网络信息",
+          eventName: "openNetworkDialog"
         },
         {
           name: "执行命令",
@@ -388,26 +375,6 @@ export default {
               type: "text"
             }
           }
-        },
-        {
-          name: "账户信息",
-          queryType: "title",
-          support: ["edit"]
-        },
-        {
-          queryType: "slot",
-          slotName: "accounts",
-          support: ["edit"]
-        },
-        {
-          name: "网络信息",
-          queryType: "title",
-          support: ["edit"]
-        },
-        {
-          queryType: "slot",
-          slotName: "networks",
-          support: ["edit"]
         }
       ];
     }

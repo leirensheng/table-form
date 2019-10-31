@@ -1,6 +1,7 @@
 <template>
   <div>
     <el-dialog
+      :append-to-body="isAppendToBody"
       :title="inputs.title"
       :visible="inputs.show"
       :close-on-click-modal="false"
@@ -148,6 +149,10 @@
 <script>
 export default {
   props: {
+    isAppendToBody:{
+        type:Boolean,
+        default:()=>false
+    },
     inputs: {
       type: Object,
       required: true
