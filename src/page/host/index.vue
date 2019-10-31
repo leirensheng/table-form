@@ -22,7 +22,9 @@
     <!-- 执行 -->
     <ExecAnsibleDialog ref="execAnsibleDialog" />
 
-    <execute-dialog ref="executeDialog" />
+    <execute-dialog 
+    :id="curHostId"
+    ref="executeDialog" />
     <!-- 账户信息 -->
     <account-dialog
       :hostId="curHostId"
@@ -88,7 +90,7 @@ export default {
       this.$refs.secrectDialog.data.show = true;
     },
     openExecuteDialog({ id }) {
-      this.$refs.executeDialog.data.form.id = id;
+      this.curHostId = id;
       this.$refs.executeDialog.data.show = true;
     },
     openAccountDialog({ id }) {

@@ -3,6 +3,7 @@
     :labelWidth="100"
     :inputs="data"
     :show-btns="isShowDialogBtns"
+    :basic-add-form="basicAddForm"
     @add="execute"
     @dialogClose="closeExecuteDialog"
   >
@@ -21,6 +22,12 @@
 <script>
 import ExecLines from "@/components/lines.vue";
 export default {
+  props: {
+    id: {
+      type: [String, Number],
+      required:true
+    }
+  },
   data() {
     return {
       isShowDialogBtns: true,
@@ -80,8 +87,15 @@ export default {
       }
     };
   },
-  components:{
-    ExecLines,
+  computed: {
+    basicAddForm() {
+      return {
+        id: this.id
+      };
+    }
+  },
+  components: {
+    ExecLines
   },
   methods: {
     closeExecuteDialog() {
