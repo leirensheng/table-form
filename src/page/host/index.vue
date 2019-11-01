@@ -1,6 +1,7 @@
 <template>
   <div id="host">
     <v-table
+      ref="hostTable"
       responseTableField='rows'
       noShowPagination
       :table-btns-config="tableBtnsConfig"
@@ -16,6 +17,8 @@
       @execAnsible="openExecAnsibleDialog"
       @openAccountDialog="openAccountDialog"
       @openNetworkDialog="openNetworkDialog"
+      @addTags="addTags"
+      @deleteTags="deleteTags"
     />
     <!-- 生成秘钥 -->
     <secrect-dialog ref="secrectDialog" />
@@ -36,6 +39,19 @@
       :hostId="curHostId"
       ref="networkDialog"
     />
+
+    <tags-dialog
+      ref="tagsDialog"
+      :hostId="curHostId"
+      @refreshHostTable="refreshHostTable"
+    />
+
+    <delete-tags-dialog
+      ref="deleteTagsDialog"
+      :hostId="curHostId"
+      :tags="curTags"
+      @refreshHostTable="refreshHostTable"
+    />
   </div>
 </template>
 
@@ -45,6 +61,9 @@ import ExecuteDialog from "./components/executeDialog";
 import SecrectDialog from "./components/secrectDialog";
 import AccountDialog from "./components/accountDialog";
 import NetworkDialog from "./components/networkDialog";
+import TagsDialog from "./components/tagsDialog";
+import DeleteTagsDialog from "./components/deleteTagsDialog";
+
 import { formatDate } from "../../../utils";
 export default {
   name: "host",
@@ -53,7 +72,9 @@ export default {
     SecrectDialog,
     ExecAnsibleDialog,
     AccountDialog,
-    NetworkDialog
+    NetworkDialog,
+    TagsDialog,
+    DeleteTagsDialog
   },
   sockets: {
     connect: function() {
@@ -70,6 +91,18 @@ export default {
     this.$socket.emit("join", "wahh");
   },
   methods: {
+    refreshHostTable() {
+      this.$refs.hostTable.search();
+    },
+    addTags({ id }) {
+      this.curHostId = id;
+      this.$refs.tagsDialog.data.show = true;
+    },
+    deleteTags({ id, tags }) {
+      this.curHostId = id;
+      this.curTags = JSON.parse(JSON.stringify(tags));
+      this.$refs.deleteTagsDialog.data.show = true;
+    },
     modifyHost(form) {
       return this.$axios.put(`v1/hosts/${form.id}`, {
         name: form.name,
@@ -136,6 +169,7 @@ export default {
   },
   data() {
     return {
+      curTags: [],
       curHostId: "",
       formData: {},
       mode: "add",
@@ -158,6 +192,16 @@ export default {
         {
           name: "执行命令",
           eventName: "openExecuteDialog"
+        },
+        {
+          name: "添加标签",
+          btnType: { isPlain: false, type: "warning" },
+          eventName: "addTags"
+        },
+        {
+          name: "删除标签",
+          btnType: { isPlain: false, type: "warning" },
+          eventName: "deleteTags"
         },
         {
           name: "删除",
@@ -214,6 +258,11 @@ export default {
           required: true,
           isShow: false,
           support: ["add"]
+        },
+        {
+          name: "标签",
+          id: "tags",
+          formatter: obj => obj.name
         },
         {
           name: "ssh端口",

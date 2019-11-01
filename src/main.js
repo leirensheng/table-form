@@ -21,7 +21,8 @@ import {
   RadioGroup,
   Alert,
   Tabs,
-  TabPane
+  TabPane,
+  Tag
 } from "element-ui";
 // import Element from "element-ui";
 // import "element-ui/lib/theme-chalk/index.css";
@@ -56,6 +57,7 @@ Vue.use(Popover);
 Vue.use(Radio);
 Vue.use(RadioGroup);
 Vue.use(Alert)
+Vue.use(Tag)
 // Vue.use(MessageBox)
 
 Vue.use(Loading.directive);
