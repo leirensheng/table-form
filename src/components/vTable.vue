@@ -221,9 +221,9 @@ import { formatDate } from "../../utils";
 export default {
   components: { Pagination, VDialog },
   props: {
-    timeFields:{
+    timeFields: {
       type: Array,
-      default:()=>['createdAt','updateTime']
+      default: () => ["createdAt", "updateTime"]
     },
     lastColumnWidth: {
       type: Number,
@@ -465,7 +465,7 @@ export default {
               if (this.getData) {
                 this.search();
               } else {
-                this.$emit('refeshTableData')
+                this.$emit("refeshTableData");
               }
             }
             this.dataForDialog.show = false;
@@ -488,7 +488,11 @@ export default {
           .handler(form)
           .then(() => {
             this.dataForDialog.show = false;
-            this.search();
+            if (this.getData) {
+              this.search();
+            } else {
+              this.$emit("refeshTableData");
+            }
             this.$message.success("保存成功");
           })
           .catch(e => {
@@ -568,7 +572,7 @@ export default {
     generateFormatter(column) {
       column.formatter = val => {
         // 统一格式化时间
-        if (this.timeFields.includes(column.id) ) {
+        if (this.timeFields.includes(column.id)) {
           return formatDate(val);
         }
         const target = column.options.find(

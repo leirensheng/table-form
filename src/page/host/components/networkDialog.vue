@@ -1,6 +1,6 @@
 <template>
   <v-dialog
-    :labelWidth="100"
+    :labelWidth="140"
     :inputs="data"
     :onDialogOpen="onDialogOpen"
     :show-btns="false"
@@ -10,6 +10,7 @@
       :noShowSearchBtn="true"
       :columns="columns"
       :directTableData="tableData"
+      :top-btns-config="topBtnsConfig"
       :table-btns-config="tableBtnsConfig"
       noShowPagination
       :is-append-to-body="true"
@@ -22,6 +23,15 @@
 export default {
   data() {
     return {
+      topBtnsConfig: [
+        {
+          name: "添加",
+          addConfig: {
+            title: "添加网络信息",
+            handler: this.handlerAdd
+          }
+        }
+      ],
       data: {
         title: "",
         show: false,
@@ -52,6 +62,9 @@ export default {
           support: {
             edit: {
               type: "radio"
+            },
+            add: {
+              type: "radio"
             }
           },
           options: [
@@ -68,16 +81,30 @@ export default {
             }
           }
         },
-        { name: "网络id", id: "id", support: ["edit"] },
-        { name: "ip地址", id: "ipAddr" },
+        { name: "网络id", id: "id", support: ["edit", "add"] },
+        { name: "ip地址", id: "ipAddr", support: ["add"] },
         { name: "mac地址", id: "macAddr" },
         { name: "primary", id: "primary" },
-        { name: "remark", id: "remark", support: ["edit"] },
+        { name: "remark", id: "remark", support: ["edit", "add"] },
+        {
+          name: "primaryNetwork",
+          id: "primaryNetwork",
+          options: [{ id: true, name: "是" }, { id: false, name: "否" }],
+          support: {
+            add: {
+              type: "radio"
+            }
+          }
+        },
+
         {
           name: "jumpHostId",
           id: "jumpHostId",
           support: {
             edit: {
+              show: row => row.connectionType === "SSH_TUNNELS"
+            },
+            add: {
               show: row => row.connectionType === "SSH_TUNNELS"
             }
           }
@@ -100,6 +127,20 @@ export default {
     }
   },
   methods: {
+    handlerAdd(form) {
+      let params = {
+        ipAddr: form.ipAddr,
+        connectionType: form.connectionType,
+        remark: form.remark,
+        primaryNetwork: form.primaryNetwork,
+        sshTunnels: {
+          jumpHostId:
+            form.connectionType === "SSH_TUNNELS" ? form.jumpHostId : "",
+          networkId: form.networkId
+        }
+      };
+      return this.$axios.post(`/v1/hosts/${form.id}/networks`, params);
+    },
     onDialogOpen() {
       this.tableData = [];
       return this.refeshTableData();
@@ -108,7 +149,8 @@ export default {
       let params = {
         connectionType: form.connectionType,
         sshTunnels: {
-          jumpHostId: form.connectionType==='SSH_TUNNELS'?form.jumpHostId:'',
+          jumpHostId:
+            form.connectionType === "SSH_TUNNELS" ? form.jumpHostId : "",
           networkId: form.id
         },
         remark: form.remark
